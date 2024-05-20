@@ -35,10 +35,6 @@ def set_png_as_page_bg(png_file):
     st.markdown(page_bg_img, unsafe_allow_html=True)
     return
 
-# define the click state of the button
-def click_button():
-    st.session_state.clicked = True
-
 # RAG PART - define the function to apply the logic to the user input string
 def process_string(input_string: str):
     client = openai.AzureOpenAI(

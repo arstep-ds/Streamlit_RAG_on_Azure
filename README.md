@@ -8,7 +8,7 @@ This repository contains a Streamlit application that integrates with the OpenAI
 - **Background Image**: Sets a local image as the background for the Streamlit app.
 - **OpenAI Integration**: Uses OpenAI's API for generating responses.
 - **Azure Search Integration**: Configured to use Azure Search for retrieving relevant data to enhance responses.
-- **ChatBot with memorization function
+- **ChatBot with memorization function**
   
 ## Prerequisites
 

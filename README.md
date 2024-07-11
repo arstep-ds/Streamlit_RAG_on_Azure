@@ -32,16 +32,12 @@ To run this application, you need to set up several environment variables. These
 Create a `.env` file in the root directory of your project and add the following content:
 
 ```plaintext
-# Azure OpenAI API key
+AZURE_OPENAI_ENDPOINT=https://your-azure_openai-service.openai.azure.com/
 AZURE_OPENAI_API_KEY=your_azure_openai_api_key
-
-# Azure AI Search endpoint
+AZURE_OPENAI_API_VERSION=your_api_version
+AZURE_OPENAI_API_MODEL=your_model
 AZURE_AI_SEARCH_ENDPOINT=https://your-azure_ai-search-endpoint.search.windows.net
-
-# Azure AI Search index name
 AZURE_AI_SEARCH_INDEX_NAME=your_azure_search_index_name
-
-# Azure AI Search API key
 AZURE_AI_SEARCH_API_KEY=your_azure_ai_search_api_key
 ```
 Replace the placeholder values (your_azure_openai_api_key, https://your-azure_ai-search-endpoint.search.windows.net, your_azure_search_index_name, your_azure_ai_search_api_key) with your actual credentials and endpoint information.

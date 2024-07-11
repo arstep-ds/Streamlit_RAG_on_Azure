@@ -14,15 +14,18 @@ def stream_data(answer):
         yield word + " "
         time.sleep(0.02)
 
+# function to reset the history of the chat whenever the toggle switch was moved
+def reset_conversation():
+    st.session_state.messages = []
+
 # localy stored background picture
-@st.cache(allow_output_mutation=True)
-def get_base64_of_bin_file(bin_file):
+def get_base64(bin_file):
     with open(bin_file, 'rb') as f:
         data = f.read()
     return base64.b64encode(data).decode()
 
-def set_png_as_page_bg(png_file):
-    bin_str = get_base64_of_bin_file(png_file)
+def set_background(png_file):
+    bin_str = get_base64(png_file)
     page_bg_img = '''
     <style>
     body {
@@ -33,33 +36,30 @@ def set_png_as_page_bg(png_file):
     ''' % bin_str
     
     st.markdown(page_bg_img, unsafe_allow_html=True)
-    return
+
+
 
 # RAG PART - define the function to apply the logic to the user input string
-def process_string(input_string: str):
+def process_string(messages: str):
     client = openai.AzureOpenAI(
-        azure_endpoint = "https://YOUR-ENDPOINT.openai.azure.com",
+        azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT"),
         api_key = os.getenv("AZURE_OPENAI_API_KEY"),
-        api_version = "YOUR_VERSION"
+        api_version = os.getenv("AZURE_OPENAI_API_VERSION")
     )
     completion = client.chat.completions.create(
-        model="YOUR_MODEL",
-        messages=[
-            {"role": "user",
-             "content": input_string,
+        model=os.getenv("AZURE_OPENAI_API_MODEL"),
+        messages=messages,
 
-            },
-        ],
         extra_body={
             "data_sources":[
                 {
                     "type": "azure_search",
                     "parameters" : {
-                        "endpoint": os.environ.get["AZURE_AI_SEARCH_ENDPOINT"],
-                        "index_name": os.environ.get["AZURE_AI_SEARCH_INDEX"],
+                        "endpoint": os.environ["AZURE_AI_SEARCH_ENDPOINT"],
+                        "index_name": os.environ["AZURE_AI_SEARCH_INDEX"],
                         "authentication":{
                             "type": "api_key",
-                            "key": os.environ.get["AZURE_AI_SEARCH_API_KEY"],
+                            "key": os.environ["AZURE_AI_SEARCH_API_KEY"],
                         }
 
 
@@ -72,22 +72,74 @@ def process_string(input_string: str):
     output = completion.choices[0].message.content
     return output
 
+# ChatGPT - Define the function to apply some logic to the input string
+def process_string_chat(messages):
+    client = openai.AzureOpenAI(
+        azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT"),
+        api_key = os.getenv("AZURE_OPENAI_API_KEY"),
+        api_version = os.getenv("AZURE_OPENAI_API_VERSION")
+    )
+    completion = client.chat.completions.create(
+        model=os.getenv("AZURE_OPENAI_API_MODEL"),
+        messages=messages,
+    )
+    output = completion.choices[0].message.content
+    return output
+
 # Streamlit app
 def main():
-    set_png_as_page_bg("PATH_TO_YOUR_LOCAL_BACKGROUND_IMAGE.gif")
+    st.set_page_config(page_title="GPT for YOUR COMPANY", page_icon="images/your_company_log.png")
+    set_background("images/your_background_picture.png")
+
+    # Initialize chat history
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
     
-    st.title("Title of your app")
+    # toggle switch
+    on = st.toggle("Activate RAG feature (Default: ChatGPT)", on_change=reset_conversation)
 
-    form = st.form(key = "my_form")
-    user_input = form.text_input(label = "Your question:")
-    submit_button = form.form_submit_button(label = "Submit")
+    if on:
+        st.write("RAG framework has been activated")
 
-    if submit_button:
-        # process the input string
-        result = process_string(user_input)
+        # Display chat messages from the history on app rerun
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+        
+        # React to user input
+        if prompt := st.chat_input("Your question?"):
+            # Display user message in chat message container
+            st.chat_message("user").markdown(prompt)
+            # Add user message to chat history
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.spinner("I have just connected to the APIs and I am searching in our databases, please wait..."):
+                response = f"{process_string(st.session_state.messages)}"
+            # Display assistant response in chat message container
+            with st.chat_message("assistant"):
+                st.write_stream(stream_data(response))
+            # Add assistant response to chat history
+            st.session_state.messages.append({"role": "assistant", "content": response})
+    else:
+        st.write("ChatGPT is active!")
 
-        # display the output string with typewriter effect
-        st.write_stream(stream_data(result))
+        # Display chat messages from the history on app rerun
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+        
+        # React to user input
+        if prompt := st.chat_input("Your question?"):
+            # Display user message in chat message container
+            st.chat_message("user").markdown(prompt)
+            # Add user message to chat history
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.spinner("I have just connected to the APIs and I am searching in our databases, please wait..."):
+                response = f"{process_string_chat(st.session_state.messages)}"
+            # Display assistant response in chat message container
+            with st.chat_message("assistant"):
+                st.write_stream(stream_data(response))
+            # Add assistant response to chat history
+            st.session_state.messages.append({"role": "assistant", "content": response})
 
 if __name__ == "__main__":
     main()

@@ -147,21 +147,65 @@ This part of the code intends to use Azure Search as a data source. Azure Search
 
 ### Streamlit Application
 ```python
+# Streamlit app
 def main():
-    set_png_as_page_bg("PATH_TO_YOUR_LOCAL_BACKGROUND_IMAGE.gif")
+    st.set_page_config(page_title="GPT for YOUR COMPANY", page_icon="images/your_company_log.png")
+    set_background("images/your_background_picture.png")
 
-    form = st.form(key="my_form")
-    user_input = form.text_input(label="Your question:")
-    submit_button = form.form_submit_button(label="Submit")
+    # Initialize chat history
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    
+    # toggle switch
+    on = st.toggle("Activate RAG feature (Default: ChatGPT)", on_change=reset_conversation)
 
-    if submit_button:
-        result = process_string(user_input)
-        st.write_stream(stream_data(result))
+    if on:
+        st.write("RAG framework has been activated")
+
+        # Display chat messages from the history on app rerun
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+        
+        # React to user input
+        if prompt := st.chat_input("Your question?"):
+            # Display user message in chat message container
+            st.chat_message("user").markdown(prompt)
+            # Add user message to chat history
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.spinner("I have just connected to the APIs and I am searching in our databases, please wait..."):
+                response = f"{process_string(st.session_state.messages)}"
+            # Display assistant response in chat message container
+            with st.chat_message("assistant"):
+                st.write_stream(stream_data(response))
+            # Add assistant response to chat history
+            st.session_state.messages.append({"role": "assistant", "content": response})
+    else:
+        st.write("ChatGPT is active!")
+
+        # Display chat messages from the history on app rerun
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+        
+        # React to user input
+        if prompt := st.chat_input("Your question?"):
+            # Display user message in chat message container
+            st.chat_message("user").markdown(prompt)
+            # Add user message to chat history
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.spinner("I have just connected to the APIs and I am searching in our databases, please wait..."):
+                response = f"{process_string_chat(st.session_state.messages)}"
+            # Display assistant response in chat message container
+            with st.chat_message("assistant"):
+                st.write_stream(stream_data(response))
+            # Add assistant response to chat history
+            st.session_state.messages.append({"role": "assistant", "content": response})
 
 if __name__ == "__main__":
     main()
 ```
-This section sets up the Streamlit app, handles user input, processes the input, and displays the response with a typewriter effect.
+This section sets up the Streamlit app, a chatbot with memorization function, handles user input, processes the input, and displays the response with a typewriter effect.
 
 ## License
 This project is licensed under the MIT License. See the LICENSE file for details.

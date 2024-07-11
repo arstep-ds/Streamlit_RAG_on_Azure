@@ -88,8 +88,10 @@ def process_string_chat(messages):
 
 # Streamlit app
 def main():
-    st.set_page_config(page_title="GPT for YOUR COMPANY", page_icon="images/your_company_log.png")
+    st.set_page_config(page_title="GPT for YOUR COMPANY", page_icon="images/your_company_logo.png")
     set_background("images/your_background_picture.png")
+
+    st.title(":red[GPT for YOUR COMPANY]")
 
     # Initialize chat history
     if "messages" not in st.session_state:
